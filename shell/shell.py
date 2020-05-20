@@ -1,9 +1,10 @@
 import numpy as np
 import numba as nb
+import astropy.units as u
 
 class ShellModel:
     """
-    A model for the evolution of a supernova shell
+    A model for the dynamics of a supernova shell
 
     Parameters
     ----------
@@ -16,32 +17,39 @@ class ShellModel:
     elapsed_time : float
         Elapsed time in years
     """
-    def __init__(self, V0=0.0153, a=1.3, b=10, R=50, elapsed_time=1300):
+    def __init__(self, V0=0.0153*u.pc/u.yr, 
+                 a=1.3, b=10, 
+                 R=50*u.pc, 
+                 elapsed_time=1300*u.yr):
         assert a != 1
-        self.a = a
         assert b != 0
+        # Stores parameters in fixed internal units
+        self.a = a
         self.b = b
-        self.V0 = V0
-        self.R = R
-        self.t = elapsed_time
+        self.V0 = V0.to_value(u.pc/u.yr)
+        self.R = R.to_value(u.pc)
+        self.t = elapsed_time.to_value(u.yr)
 
-    def final_radius(self, x):
+    def final_radius(self, r0):
         """
         Computes Final (Eulerian) radius from Initial (Lagrangian)
         """
-        return _final_radius(x, self.t, self.a, self.b, self.R, self.V0)
+        return _final_radius(r0.to_value(u.pc), self.t, 
+                             self.a, self.b, self.R, self.V0) * u.pc
 
-    def initial_radius(self, x):
+    def initial_radius(self, r):
         """
         Computes Initial (Lagrangian) radius from Final (Eulerian)
         """
-        return _initial_radius(x, self.t, self.a, self.b, self.R, self.V0)
+        return _initial_radius(r.to_value(u.pc), self.t, 
+                               self.a, self.b, self.R, self.V0) * u.pc
 
     def dr_dr0(self, r, r0):
         """
         Derivative dr_dr0
         """
-        return _dr_dr0(r, r0, self.a, self.b, self.R)
+        return _dr_dr0(r.to_value(u.pc), r0.to_value(u.pc), 
+                       self.a, self.b, self.R)
 
 # The following decorators vectorize (i.e. allow a scalar funtion to be
 # applied on numpy arrays) and speed up (using just-in-time-compilation)
