@@ -1,10 +1,12 @@
-from scipy.integrate import trapz, cumtrapz
+from scipy.integrate import trapz, cumtrapz #, simps
 import numpy as np
 import astropy.units as u
 
 pi = np.pi*u.rad # convenience
+integrate = trapz 
 
-def compute_stokes_parameters(grid, wavelength, Bx, By, Bz, ne, ncr):
+def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
+                              ne, ncr, gamma=1.0):
     """
     Computes Stokes I, Q, U integrated along z axis
     
@@ -33,7 +35,7 @@ def compute_stokes_parameters(grid, wavelength, Bx, By, Bz, ne, ncr):
     Bperp2 = Bx**2+By**2
 
     # Total synchrotron intensity
-    I = trapz(Bperp2*ncr, grid.z, axis=2)
+    I = integrate(Bperp2*ncr, grid.z, axis=2)
 
     # Intrinsic polarization angles
     psi0 = np.arctan(By/Bx) + pi/2
@@ -54,8 +56,11 @@ def compute_stokes_parameters(grid, wavelength, Bx, By, Bz, ne, ncr):
     # Rotated polarization angle grid
     psi = psi0 + wavelength**2*RM
 
+    # Intrinsic polarization degree
+    p0 = (gamma+1)/(gamma+7/3)
+    
     # # Stokes Q and U
-    U = trapz( ncr * Bperp2 * np.sin(2*psi) , grid.z, axis=2);
-    Q = trapz( ncr * Bperp2 * np.cos(2*psi) , grid.z, axis=2);
+    U = p0*integrate( ncr * Bperp2 * np.sin(2*psi) , grid.z, axis=2);
+    Q = p0*integrate( ncr * Bperp2 * np.cos(2*psi) , grid.z, axis=2);
     
     return I, U, Q
