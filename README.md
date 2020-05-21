@@ -1,7 +1,10 @@
-# helSN: Magnetic helicity from supernova remnants
+# Models of SN remnants and magnetic helicity
 
 The code in this repository aims allowing studying *magnetic helicity* from observational data in SNe remnants.
 
-At the moment, the objective is testing and reorganising the code developed by Ivan Shmarov and converting into an easy to use and extent python tool.
+The repository contains a range of simple models for the magnetic field and gas distribution in SN remnants.
+It also features any interface code to run these wihtin the 
+[IMAGINE](https://github.com/IMAGINE-Consortium/imagine/) pipeline, thus allowing the inference of SN model
+properties from observational data. 
 
-One can check the progress in this, please see the [jupyter notebook](matlab/Test_Shell.ipynb) in the matlab directory.
+Such machinery is used to develop diagnostic tools which can measure current helicity in SN remanants.
