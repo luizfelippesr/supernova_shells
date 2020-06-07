@@ -16,20 +16,20 @@ def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
         A *cartesian* IMAGINE grid object
     wavelength : float
         The wavelength of the observatin
-    Bx, By, Bz : numpy.ndarray
+    Bx, By, Bz : astropy.units.Quantity
         Magnetic field components
-    ne : numpy.ndarray
+    ne : astropy.units.Quantity
         Thermal electron density
-    ncr : numpy.ndarray
+    ncr : astropy.units.Quantity
         Cosmic ray electron density
         
     Returns
     -------
-    I : np.ndarray
+    I : astropy.units.Quantity
         Total synchroton intensity (arbitrary units)
-    Q : np.ndarray
+    Q : astropy.units.Quantity
         Stokes Q parameter intensity (arbitrary units)
-    U : np.ndarray
+    U : astropy.units.Quantity
         Stokes U parameter intensity (arbitrary units)
     """
     Bperp2 = Bx**2+By**2
@@ -64,3 +64,31 @@ def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
     Q = p0*integrate( ncr * Bperp2 * np.cos(2*psi) , grid.z, axis=2);
     
     return I, U, Q
+
+def compute_Psi(U, Q):
+    """
+    Computes the observed polarization angle
+    
+    Parameters
+    ----------
+    U, Q : astropy.units.Quantity
+        Stokes U and Q
+    
+    Returns
+    -------
+    psi 
+        Polarization angle
+    """
+    pi = np.pi*u.rad
+    psi = np.arctan2(U,Q)
+    # Keeps angles in the [-pi pi] interval
+    psi[psi>pi] = psi[psi>pi]-2*pi
+    psi[psi<-pi] = psi[psi<-pi]+2*pi
+    return psi
+
+        
+def compute_RM(Psi1, Psi2, lambda1, lambda2):
+    """
+    Computes Faraday rotation measure from two frequencies and angles
+    """
+    return (Psi2-Psi1) / (lambda2**2 - lambda1**2)
