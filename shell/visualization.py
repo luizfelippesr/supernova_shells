@@ -4,7 +4,7 @@ import numpy as np
 def get_latex_units(q):
     return q.unit._repr_latex_().replace('$','')
 
-def plot_scalar_xy(grid, scalar_field, name='n',
+def plot_scalar_xy(grid, scalar_field, name='n', colormesh=True,
                    pos=None, ax=None, fig=None, **kwargs):
     """
     Plots a slice of a scalar field defined on a 3D cartesian grid
@@ -23,8 +23,13 @@ def plot_scalar_xy(grid, scalar_field, name='n',
     else:
         im_slice = scalar_field
     
-    im = ax.contourf(grid.x[:,:,pos], grid.y[:,:,pos], im_slice, 
-                     **kwargs)
+    if colormesh:
+        im = ax.pcolormesh(grid.x[:,:,pos].value, grid.y[:,:,pos].value, 
+                           im_slice.value, **kwargs)
+    else:
+        im = ax.contourf(grid.x[:,:,pos], grid.y[:,:,pos], 
+                         im_slice.value, **kwargs)
+    
     ax.set_aspect(1)
     ax.set_xlabel(r'$x\;[\rm pc]$')
     ax.set_ylabel(r'$y\;[\rm pc]$')
