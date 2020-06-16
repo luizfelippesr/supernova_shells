@@ -80,7 +80,7 @@ def compute_Psi(U, Q):
         Polarization angle
     """
     pi = np.pi*u.rad
-    psi = np.arctan2(U,Q)
+    psi = np.arctan2(U,Q) / 2.
     # Keeps angles in the [-pi pi] interval
     psi[psi>pi] = psi[psi>pi]-2*pi
     psi[psi<-pi] = psi[psi<-pi]+2*pi

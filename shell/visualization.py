@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-
+import astropy.units as u
 def get_latex_units(q):
     return q.unit._repr_latex_().replace('$','')
 
@@ -22,6 +22,10 @@ def plot_scalar_xy(grid, scalar_field, name='n', colormesh=True,
         im_slice = scalar_field[:,:,pos]
     else:
         im_slice = scalar_field
+    
+    if 'cmap' not in kwargs:
+        if scalar_field.unit.is_equivalent(u.rad):
+            kwargs['cmap'] = 'twilight_shifted'
     
     if colormesh:
         im = ax.pcolormesh(grid.x[:,:,pos].value, grid.y[:,:,pos].value, 

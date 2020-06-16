@@ -115,7 +115,7 @@ def _compute_Jz(x, y, By, Bx, boundary_radius=1):
             Jz[i,j] -= sum_B_para*delta_y
             # To finally get Jz we need to divide by the surface within the path
             Jz[i,j] /= delta_x*delta_y
-            
+            Jz[i,j] /= 3.
             
 #         Jz[i,j] = Jz[i,j] - sum(Bx[i+s,j-s:j+s]) * ( x[i+s,j+s]-x[i+s,j-s] ) # \/
 #         Jz[i,j] = Jz[i,j] - sum(By[i-s:i+s,j-s]) * ( y[i+s,j-s]-y[i-s,j-s] ) # 
