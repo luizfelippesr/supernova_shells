@@ -38,7 +38,7 @@ def simple_random(grid, Brms):
     for i, c in enumerate(['x','y','z']):
         for j, d in enumerate(['x','y','z']):
             dj = (grid.box[j][-1]-grid.box[j][0])/float(grid.resolution[j])
-            dBi_dj[c,d] = derive(A_rnd[c],dj, axis=j)
+            dBi_dj[c,d] = derive(A_rnd[c], dj, axis=j)
 
     # Computes the curl of A_rnd
     Brnd = {}        

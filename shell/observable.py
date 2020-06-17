@@ -1,5 +1,6 @@
 from scipy.integrate import trapz, cumtrapz #, simps
 import numpy as np
+from numba import jit, njit, vectorize
 import astropy.units as u
 
 pi = np.pi*u.rad # convenience
@@ -65,6 +66,7 @@ def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
     
     return I, U, Q
 
+
 def compute_Psi(U, Q):
     """
     Computes the observed polarization angle
@@ -76,19 +78,85 @@ def compute_Psi(U, Q):
     
     Returns
     -------
-    psi 
+    Psi : astropy.units.Quantity
         Polarization angle
     """
-    pi = np.pi*u.rad
     psi = np.arctan2(U,Q) / 2.
-    # Keeps angles in the [-pi pi] interval
-    psi[psi>pi] = psi[psi>pi]-2*pi
-    psi[psi<-pi] = psi[psi<-pi]+2*pi
+    
+    # Unwraps the angles
+    psi = adjust_angles(psi.to_value(u.rad))*u.rad
+    
     return psi
 
         
 def compute_RM(Psi1, Psi2, lambda1, lambda2):
     """
-    Computes Faraday rotation measure from two frequencies and angles
+    Computes Faraday rotation measure from two wavelengths and angles
+    
+    Parameters
+    ----------
+    Psi1, Psi2 : astropy.units.Quantity
+        Polarization angles
+    lambda1, lambda2 : astropy.units.Quantity
+        Wavelengths used
+        
+    Returns
+    -------
+    RM : astropy.units.Quantity
+        Faraday rotation measure
     """
-    return (Psi2-Psi1) / (lambda2**2 - lambda1**2)
+    diff = Psi2 - Psi1
+    
+    # Takes the smallest possible angle difference accounting for the 
+    # n-pi ambiguity   (needs to be checked)
+    diff = _adjust_diff(diff.to_value(u.rad))*u.rad
+    
+    return  diff / (lambda2**2 - lambda1**2)
+
+
+@vectorize(['float64(float64)'], target='parallel')
+def adjust_angles(psi):
+    """
+    Restricts angles to -pi < psi <= pi
+    
+    Parameters
+    ----------
+    psi : numpy.ndarray
+        Angle in radians
+        
+    Returns
+    -------
+    psi 
+        Angle in the correct range
+    """
+    pi = np.pi
+    while (psi > pi):
+        psi -= 2*pi
+    while (psi <= -pi):
+        psi += 2*pi
+    return psi
+  
+@vectorize(['float64(float64)'], target='parallel')
+def _adjust_diff(diff):
+    """
+    Takes the smallest possible angle difference accounting for
+    the n-pi ambiguity
+    
+    Parameters
+    ----------
+    diff : numpy.ndarray
+        Angle difference in radians
+        
+    Returns
+    -------
+    diff 
+        Angle difference in radians
+    """
+    pi = np.pi
+    while (abs(diff-pi) < abs(diff)):
+        diff -= pi
+    while (abs(diff+pi) < abs(diff)):
+        diff += pi    
+    return diff
+    
+  

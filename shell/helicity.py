@@ -69,7 +69,8 @@ def average_helicity(RM, I, PA, wavelengths, ne, ncr, L, x, y,
                      By.to_value(u.microgauss),
                      boundary_radius=boundary_radius)
     # Restores and adjusts units
-    Jz = Jz * u.microgauss*u.pc * 4*np.pi/c.c.cgs /u.pc/u.pc
+    Jz = Jz * u.microgauss*u.pc * (c.c/4*np.pi) /u.pc/u.pc
+    Jz = Jz.to(u.microgauss/u.s)
     
     # z-component of Helicity
     Hz = Jz * Bz
@@ -80,7 +81,7 @@ def average_helicity(RM, I, PA, wavelengths, ne, ncr, L, x, y,
         return Hz, Jz
     
     
-@nb.njit
+@nb.njit(parallel=True)
 def _compute_Jz(x, y, By, Bx, boundary_radius=1):    
     
     #boundary radius excluding central pixel
@@ -91,7 +92,7 @@ def _compute_Jz(x, y, By, Bx, boundary_radius=1):
     # Initializes with an array of NaNs
     # (to avoid artificially filling with zeroes)
     Jz = np.empty_like(Bx) *np.nan
-    print(x.shape)
+    
     Nx, Ny = x.size, y.size
     
     # Idea: (side*B) over the path divided by the area
