@@ -125,3 +125,21 @@ def _compute_Jz(x, y, By, Bx, boundary_radius=1):
     return Jz
             
  
+    
+def compute_theoretical_Hz(grid, B):
+    """
+    Compute 
+    """
+    Bx, By, Bz = B
+    # Computes the z component of the curl of B
+    dx = (grid.box[0][-1]-grid.box[0][0])/float(grid.resolution[0])
+    dBy_dx = derive(By.value, dx.value, axis=0)*By.unit/dx.unit
+
+    dy = (grid.box[1][-1]-grid.box[1][0])/float(grid.resolution[1])
+    dBx_dy = derive(Bx.value, dy.value, axis=1)*Bx.unit/dy.unit
+
+    curl_Bz = dBy_dx - dBx_dy
+
+    Jz = curl_Bz * c.c/(4*np.pi)
+    Hz = Jz * Bz
+    return Hz.mean(axis=2).to(u.microgauss**2/u.s)

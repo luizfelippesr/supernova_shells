@@ -209,5 +209,3 @@ class Model:
             self.estimate_observed_helicity()
         return self._Jz
         
-    
-    
