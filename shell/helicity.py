@@ -7,6 +7,7 @@ import numpy as np
 import astropy.units as u
 import astropy.constants as c
 import numba as nb
+from galmag.util import derive
 
 # Convenience
 pi = np.pi*u.rad
@@ -96,8 +97,8 @@ def _compute_Jz(x, y, By, Bx, boundary_radius=1):
     Nx, Ny = x.size, y.size
     
     # Idea: (side*B) over the path divided by the area
-    for j in range(s,Ny-s):
-        for i in range(s,Nx-s):        
+    for j in nb.prange(s,Ny-s):
+        for i in nb.prange(s,Nx-s):        
             
             delta_x = x[i+s] - x[i-s]
             delta_y = y[j+s] - y[j-s]
@@ -124,11 +125,25 @@ def _compute_Jz(x, y, By, Bx, boundary_radius=1):
 #         Jz[i,j] = Jz[i,j] / abs(x[i-s,j-s]-x[i-s,j+s]) / abs(y[i+s,j-s]-y[i-s,j-s]) / 3
     return Jz
             
- 
     
 def compute_theoretical_Hz(grid, B):
     """
-    Compute 
+    Computes the expected average helicity
+    
+    Parameters
+    ----------
+    grid : imagine.fields.grid.Grid
+        A *cartesian* IMAGINE grid object
+    B : list
+        A list containing the astropy.units.Quantity objects 
+        with the x, y, and z-components of the magnetic field
+    
+    Returns
+    -------
+    Jz_mean
+        The z-component of the current, averaged over the z direction
+    Hz_mean
+        The z-component of the current helicity, averaged over the z direction
     """
     Bx, By, Bz = B
     # Computes the z component of the curl of B
@@ -142,4 +157,5 @@ def compute_theoretical_Hz(grid, B):
 
     Jz = curl_Bz * c.c/(4*np.pi)
     Hz = Jz * Bz
-    return Hz.mean(axis=2).to(u.microgauss**2/u.s)
+    
+    return Jz.mean(axis=2).to(u.microgauss/u.s), Hz.mean(axis=2).to(u.microgauss**2/u.s)

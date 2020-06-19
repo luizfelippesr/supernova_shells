@@ -118,6 +118,8 @@ class Model:
             self._PI = None
             self._Hz = None
             self._Jz = None
+            self._Hz_real = None
+            self._Jz_real = None
      
     @property
     def Q(self):
@@ -192,11 +194,8 @@ class Model:
                                                   wavelengths=self.wavelengths,
                                                   ne=1*u.cm**-3, ncr=1*u.cm**-3, L=Lz,
                                                   x=self.grid.x[:,0,0], y=self.grid.y[0,:,0],
-                                                  boundary_radius=1, output_current=True)
-        
-        
-        
-    
+                                                  boundary_radius=1, output_current=True)        
+
     @property
     def Hz(self):
         if self._Hz is None:
@@ -208,4 +207,19 @@ class Model:
         if self._Jz is None:
             self.estimate_observed_helicity()
         return self._Jz
+    
+    def compute_helicity(self):
+        self._Hz_real, self._Jz_real = hel.compute_theoretical_Hz(self.grid, self.B)
+    
+    @property
+    def Hz_real(self):
+        if self._Hz_real is None:
+            self.compute_helicity()
+        return self._Hz_real
+
+    @property
+    def Jz_real(self):
+        if self._Jz_real is None:
+            self.compute_helicity()
+        return self._Jz_real
         
