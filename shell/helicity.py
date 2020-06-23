@@ -7,7 +7,7 @@ import numpy as np
 import astropy.units as u
 import astropy.constants as c
 import numba as nb
-from galmag.util import derive
+from .util import derive
 
 # Convenience
 pi = np.pi*u.rad
@@ -56,9 +56,11 @@ def average_helicity(RM, I, PA, wavelengths, ne, ncr, L, x, y,
     
     # De-rotates the polarization angles
     Psi = [ PA[i] - wavelengths[i]**2*RM for i in (0,1)]
-    PA_avg = (Psi[0] + Psi[1])/2.
+#     PA_avg = (Psi[0] + Psi[1])/2.
+    PA_avg = Psi[0]
+    
     # Averages the intensity
-    I_avg = (I[0] + I[1])/2.
+    I_avg = I[0] # + I[1])/2.
     
     Bxy = np.sqrt(I_avg / ncr / (2*L))    
     Bx = Bxy * np.cos(PA_avg - pi/2.)
@@ -158,4 +160,8 @@ def compute_theoretical_Hz(grid, B):
     Jz = curl_Bz * c.c/(4*np.pi)
     Hz = Jz * Bz
     
-    return Jz.mean(axis=2).to(u.microgauss/u.s), Hz.mean(axis=2).to(u.microgauss**2/u.s)
+    # TODO: switch to weighted averages of Bz and Jz following:
+    # <Bz*ne>/<ne>
+    # <Jz*PI>/<PI>
+    
+    return Hz.mean(axis=2).to(u.microgauss**2/u.s), Jz.mean(axis=2).to(u.microgauss/u.s)

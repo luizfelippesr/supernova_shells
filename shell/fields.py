@@ -3,7 +3,7 @@ Contain functions that allow constructing simple fields on a grid
 """
 import astropy.units as u
 import numpy as np
-from galmag.util import derive
+from .util import derive
 pi = np.pi*u.rad
 sqrt2 = np.sqrt(2)
 
