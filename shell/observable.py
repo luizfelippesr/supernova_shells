@@ -4,13 +4,13 @@ from numba import jit, njit, vectorize
 import astropy.units as u
 
 pi = np.pi*u.rad # convenience
-integrate = trapz 
+integrate = trapz
 
 def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
                               ne, ncr, gamma=1.0):
     """
     Computes Stokes I, Q, U integrated along z axis
-    
+
     Parameters
     ----------
     grid : imagine.fields.grid.Grid
@@ -23,7 +23,7 @@ def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
         Thermal electron density
     ncr : astropy.units.Quantity
         Cosmic ray electron density
-        
+
     Returns
     -------
     I : astropy.units.Quantity
@@ -47,7 +47,7 @@ def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
     # Cummulative Faraday rotation (i.e. rotation up to a given depth)
     if wavelength != 0:
         integrand = Bz.to_value(u.microgauss)*ne.to_value(u.cm**-3)
-        RM = (0.812*u.rad/u.m**2) * cumtrapz(integrand, 
+        RM = (0.812*u.rad/u.m**2) * cumtrapz(integrand,
                                              grid.z.to_value(u.pc),
                                              axis=2, initial=0)
     else:
@@ -59,58 +59,58 @@ def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
 
     # Intrinsic polarization degree
     p0 = (gamma+1)/(gamma+7/3)
-    
+
     # # Stokes Q and U
     U = p0*integrate( ncr * Bperp2 * np.sin(2*psi) , grid.z, axis=2);
     Q = p0*integrate( ncr * Bperp2 * np.cos(2*psi) , grid.z, axis=2);
-    
+
     return I, U, Q
 
 
 def compute_Psi(U, Q):
     """
     Computes the observed polarization angle
-    
+
     Parameters
     ----------
     U, Q : astropy.units.Quantity
         Stokes U and Q
-    
+
     Returns
     -------
     Psi : astropy.units.Quantity
         Polarization angle
     """
     psi = np.arctan2(U,Q) / 2.
-    
+
     # Unwraps the angles
     psi = adjust_angles(psi.to_value(u.rad))*u.rad
-    
+
     return psi
 
-        
+
 def compute_RM(Psi1, Psi2, lambda1, lambda2):
     """
     Computes Faraday rotation measure from two wavelengths and angles
-    
+
     Parameters
     ----------
     Psi1, Psi2 : astropy.units.Quantity
         Polarization angles
     lambda1, lambda2 : astropy.units.Quantity
         Wavelengths used
-        
+
     Returns
     -------
     RM : astropy.units.Quantity
         Faraday rotation measure
     """
     diff = Psi2 - Psi1
-    
-    # Takes the smallest possible angle difference accounting for the 
+
+    # Takes the smallest possible angle difference accounting for the
     # n-pi ambiguity   (needs to be checked)
     diff = _adjust_diff(diff.to_value(u.rad))*u.rad
-    
+
     return  diff / (lambda2**2 - lambda1**2)
 
 
@@ -118,15 +118,15 @@ def compute_RM(Psi1, Psi2, lambda1, lambda2):
 def adjust_angles(psi):
     """
     Restricts angles to -pi < psi <= pi
-    
+
     Parameters
     ----------
     psi : numpy.ndarray
         Angle in radians
-        
+
     Returns
     -------
-    psi 
+    psi
         Angle in the correct range
     """
     pi = np.pi
@@ -135,28 +135,28 @@ def adjust_angles(psi):
     while (psi <= -pi):
         psi += 2*pi
     return psi
-  
+
 @vectorize(['float64(float64)'], target='parallel')
 def _adjust_diff(diff):
     """
     Takes the smallest possible angle difference accounting for
     the n-pi ambiguity
-    
+
     Parameters
     ----------
     diff : numpy.ndarray
         Angle difference in radians
-        
+
     Returns
     -------
-    diff 
+    diff
         Angle difference in radians
     """
     pi = np.pi
     while (abs(diff-pi) < abs(diff)):
         diff -= pi
     while (abs(diff+pi) < abs(diff)):
-        diff += pi    
+        diff += pi
     return diff
-    
-  
+
+
