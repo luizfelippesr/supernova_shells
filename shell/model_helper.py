@@ -11,7 +11,7 @@ import astropy.constants as c
 muG = u.microgauss
 
 from importlib import reload
-import .helicity as hel
+import shell.helicity as hel
 
 class Model:
     """

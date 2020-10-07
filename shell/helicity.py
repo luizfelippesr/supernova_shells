@@ -7,7 +7,7 @@ import numpy as np
 import astropy.units as u
 import astropy.constants as c
 import numba as nb
-from .util import derive
+from shell.util import derive
 
 # Convenience
 pi = np.pi*u.rad
