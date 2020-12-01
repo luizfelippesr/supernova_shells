@@ -1,10 +1,10 @@
 """
 Contain functions that allow constructing simple fields on a grid
 """
-import astropy.units as u
+import astropy.units as apu
 import numpy as np
 from shell.util import derive
-pi = np.pi*u.rad
+pi = np.pi*apu.rad
 sqrt2 = np.sqrt(2)
 
 def uniform(grid, B):
@@ -14,20 +14,20 @@ def uniform(grid, B):
 def simple_random(grid, Brms):
     """
     Generates a basic random field
-    
+
     Parameters
     ----------
     grid : imagine.fields.grid.Grid
         An IMAGINE grid object
     Brms : float
-        RMS value of the computed field 
-        
+        RMS value of the computed field
+
     Returns
     -------
     Bx, By, Bz
     """
     mu = 0; sigma = 1
-    # Defines a random vector potential 
+    # Defines a random vector potential
     A_rnd = {} # Dictionary of vector components
     for i, c in enumerate(('x','y','z')):
         A_rnd[c] = np.random.normal(mu, sigma, grid.resolution.prod())
@@ -41,34 +41,81 @@ def simple_random(grid, Brms):
             dBi_dj[c,d] = derive(A_rnd[c], dj, axis=j)
 
     # Computes the curl of A_rnd
-    Brnd = {}        
+    Brnd = {}
     Brnd['x'] = dBi_dj['z','y'] -  dBi_dj['y','z']
     Brnd['y'] = dBi_dj['x','z'] -  dBi_dj['z','x']
     Brnd['z'] = dBi_dj['y','x'] -  dBi_dj['x','y']
-    
+
     # Finds normalization factor  to obtain correct Brms
     norm = np.sqrt(np.mean([Brnd[k]**2 for k in Brnd]))
     f = Brms/norm/np.sqrt(3)
-    
+
     return Brnd['x']*f, Brnd['y']*f,  Brnd['z']*f
 
 
-def helical(grid, B, period=70*u.pc):
+def helical_new(grid, B, period=70*apu.pc):
     """
     Computes a simple helical field
-    
+
+    Parameters
+    ----------
+    B : list
+        List containing the three components of the reference vector. The
+        amplitude of the vector sets the amplitude of the magnetic field,
+        while the direction is used to choose the orientation of the helical
+        field.
+    period
+        Period of the helical field
+
+    Returns
+    -------
+    Bx, By, Bz
+    """
+
+    # Prepares vector basis
+    B = np.stack(B)
+    amplitude = np.linalg.norm(B)
+    i, j, k = np.array([1,0,0]), np.array([0,1,0]), np.array([0,0,1])
+    u = B / amplitude
+    w = np.cross(u, j)
+    w /= np.linalg.norm(w)
+    v = np.cross(w, u)
+    v /= np.linalg.norm(v)
+
+    # Position vector
+    r = np.stack([grid.x, grid.y, grid.z], axis=-1)
+    arg = pi * (r @ u) / period
+
+    # Helical parallel to x
+    Bu = np.ones(grid.x.shape) /sqrt2  * amplitude
+    Bv = np.cos(arg) /sqrt2 * amplitude
+    Bw = np.sin(arg) /sqrt2 * amplitude
+
+    Bx = Bu*(u@i) + Bv*(v@i) + Bw*(w@i)
+    By = Bu*(u@j) + Bv*(v@j) + Bw*(w@j)
+    Bz = Bu*(u@k) + Bv*(v@k) + Bw*(w@k)
+
+    return Bx, By, Bz
+
+
+def helical(grid, B, period=70*apu.pc):
+    """
+    Computes a simple helical field
+
+    Bogus version of the helical field
+
     Parameters
     ----------
     B : list
         List containing the x, y and z magnitudes
     period
         Period of the helical field
-    
+
     Returns
     -------
     Bx, By, Bz
     """
-    
+
     # Helical parallel to x
     Bx = np.ones(grid.x.shape) /sqrt2  * B[0]
     arg = pi*grid.x/period
