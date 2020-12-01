@@ -66,7 +66,7 @@ class FieldTransformer:
                                      self.dz_dx0, self.dz_dy0, self.dz_dz0)
         return self._inv_J
     
-    def _transform_density_field(self, n0):
+    def transform_density_field(self, n0):
         r"""
         Transforms density field using:
         
@@ -92,7 +92,7 @@ class FieldTransformer:
         # Computes the new field
         return self.inv_J * n0
     
-    def _transform_magnetic_field(self, Bx0, By0, Bz0):
+    def transform_magnetic_field(self, Bx0, By0, Bz0):
         r"""
         Transforms magnetic field using:
         
@@ -143,8 +143,8 @@ class FieldTransformer:
         final_components_list : tuple
             Magnetic field components (Bx, By, Bz) in the SN remnant
         """
-        n = self._transform_density_field(n0)
-        final_components_list = self._transform_magnetic_field(*B0_components_list)
+        n = self.transform_density_field(n0)
+        final_components_list = self.transform_magnetic_field(*B0_components_list)
 
         return n, final_components_list
         
