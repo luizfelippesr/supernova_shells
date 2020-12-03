@@ -14,5 +14,6 @@ Such machinery is used to develop diagnostic tools which can measure current hel
 ## Requirements and installation 
 
 1. [IMAGINE](https://imagine-code.readthedocs.io/en/latest/installation.html) 
-2. [IMAGINE-CRPropa](https://github.com/IMAGINE-Consortium/imagine-crpropa) extension
+2. [numba](https://numba.pydata.org/)
+2. [IMAGINE-CRPropa](https://github.com/IMAGINE-Consortium/imagine-crpropa) extension (if using helical random fields)
 
