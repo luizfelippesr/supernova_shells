@@ -37,7 +37,7 @@ class _SNR_DA530_base(img.observables.ImageDataset):
             val_max[q] = ref_val + delta[q]*(n_pix - ref_pos)
             val_arr[q] = np.arange(val_min[q], val_max[q] + delta[q]/2, delta[q]) - ref_val
 
-        super().__init__(data, 'sync',
+        super().__init__(data*u.K, 'sync',
                        lon_min=val_min['GLON-CAR'],
                        lon_max=val_max['GLON-CAR'],
                        lat_min=val_min['GLAT-CAR'],

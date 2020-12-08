@@ -1,3 +1,4 @@
 from . import *
-from .datasets import *
-from .fields import *
+# Import subpackages
+from . import (
+    fields, datasets, simulators)
