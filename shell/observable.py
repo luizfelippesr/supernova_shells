@@ -2,12 +2,13 @@ from scipy.integrate import trapz, cumtrapz #, simps
 import numpy as np
 from numba import jit, njit, vectorize
 import astropy.units as u
+from scipy.ndimage import gaussian_filter
 
 pi = np.pi*u.rad # convenience
 integrate = trapz
 
 def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
-                              ne, ncr, gamma=3.0):
+                              ne, ncr, gamma=3, beam_kernel_sd=None):
     """
     Computes Stokes I, Q, U integrated along z axis
 
@@ -23,6 +24,12 @@ def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
         Thermal electron density
     ncr : astropy.units.Quantity
         Cosmic ray electron density
+    gamma : float
+        Spectral index of the cosmic ray electron distribution
+    beam_kernel_sd : float
+        If different from `None`, the resulting signal is convolved with
+        a gaussian kernel with standard deviation `beam_kernel_sd` (in pixels).
+        Otherwise, a pencil beam is assumed.
 
     Returns
     -------
@@ -65,6 +72,10 @@ def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
     # # Stokes Q and U
     U = p0*integrate(emissivity * np.sin(2*psi), grid.z, axis=2)
     Q = p0*integrate(emissivity * np.cos(2*psi), grid.z, axis=2)
+
+    if beam_kernel_sd is not None:
+        I, U, Q = [ gaussian_filter(Stokes.value, sigma=beam_kernel_sd)*Stokes.unit
+                    for Stokes in (I, U, Q) ]
 
     return I, U, Q
 

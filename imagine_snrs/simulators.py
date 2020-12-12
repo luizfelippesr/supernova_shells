@@ -9,7 +9,31 @@ import astropy.units as u
 
 class SimpleSynchrotron(Simulator):
     """
-    Example simulator to illustrate
+    Simulates the radio images associated with the synchrotron emission signal
+    of an object at a large distance.
+
+    It assumes that the distances are sufficient large (relative to the object
+    size) to approximate the projections as parallel.  The grid where the
+    Fields are constructed is placed at distance `distance`, with the centre
+    of the smallest z face coinciding with the centre of the simulated image,
+    and x and y corresponding to longitudes and latitudes, respectively.
+
+    Parameters
+    ----------
+    measurements : imagine.observables.Measurements
+        Observational data
+    distance : astropy.units.Quantity
+        The distance to the object in apropriate units (e.g. kpc)
+    gamma : float
+        The assumed spectral index for the cosmic ray electron distribution
+    beam_kernel_sd : float
+        If different from `None`, the resulting signal is convolved with
+        a gaussian kernel with standard deviation `beam_kernel_sd` (in pixels).
+        Otherwise, a pencil beam is assumed.
+    interp_method : str
+        The interpolation method used by `scipy.interpolate.RegularGridInterpolator`
+        to interpolate the resulting images to the same dimensions as the
+        images in the `measurements`.
     """
     # Class attributes
     SIMULATED_QUANTITIES = ['sync']
@@ -18,12 +42,14 @@ class SimpleSynchrotron(Simulator):
                             'thermal_electron_density']
     ALLOWED_GRID_TYPES = ['cartesian']
 
-    def __init__(self, measurements, distance, gamma=1.0, interp_method='nearest'):
+    def __init__(self, measurements, distance, gamma=1.0, beam_kernel_sd=None,
+                 interp_method='nearest'):
         super().__init__(measurements)
         self.gamma = gamma
         self.Stokes = {}
         self.interp_method = interp_method
         self.distance = distance
+        self.beam_kernel_sd = beam_kernel_sd
 
     def _units(self, key):
         if key[0] == 'sync':
@@ -68,7 +94,9 @@ class SimpleSynchrotron(Simulator):
 
             I, U, Q = compute_stokes_parameters(grid, wavelength,
                                                 Bx, By, Bz,
-                                                ne, ncr, gamma=self.gamma)
+                                                ne, ncr, gamma=self.gamma,
+                                                beam_kernel_sd=self.beam_kernel_sd)
+
             self.Stokes['I'] = I
             self.Stokes['Q'] = Q
             self.Stokes['U'] = U
