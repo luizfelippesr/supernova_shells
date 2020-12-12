@@ -7,7 +7,7 @@ pi = np.pi*u.rad # convenience
 integrate = trapz
 
 def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
-                              ne, ncr, gamma=1.0):
+                              ne, ncr, gamma=3.0):
     """
     Computes Stokes I, Q, U integrated along z axis
 
@@ -15,8 +15,8 @@ def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
     ----------
     grid : imagine.fields.grid.Grid
         A *cartesian* IMAGINE grid object
-    wavelength : float
-        The wavelength of the observatin
+    wavelength : stropy.units.Quantity
+        The wavelength of the observation
     Bx, By, Bz : astropy.units.Quantity
         Magnetic field components
     ne : astropy.units.Quantity
@@ -35,8 +35,10 @@ def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
     """
     Bperp2 = Bx**2+By**2
 
+    emissivity = ncr * Bperp2**((gamma+1)/4) * wavelength**((gamma-1)/2)
+
     # Total synchrotron intensity
-    I = integrate(Bperp2*ncr, grid.z, axis=2)
+    I = integrate(emissivity, grid.z, axis=2)
 
     # Intrinsic polarization angles
     psi0 = np.arctan(By/Bx) + pi/2
@@ -61,8 +63,8 @@ def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
     p0 = (gamma+1)/(gamma+7/3)
 
     # # Stokes Q and U
-    U = p0*integrate( ncr * Bperp2 * np.sin(2*psi) , grid.z, axis=2);
-    Q = p0*integrate( ncr * Bperp2 * np.cos(2*psi) , grid.z, axis=2);
+    U = p0*integrate(emissivity * np.sin(2*psi), grid.z, axis=2)
+    Q = p0*integrate(emissivity * np.cos(2*psi), grid.z, axis=2)
 
     return I, U, Q
 

@@ -5,6 +5,7 @@ from imagine.simulators import Simulator
 from shell.observable import compute_stokes_parameters
 from scipy.interpolate import RegularGridInterpolator
 
+import astropy.units as u
 
 class SimpleSynchrotron(Simulator):
     """
@@ -39,6 +40,18 @@ class SimpleSynchrotron(Simulator):
         else:
             raise ValueError
 
+
+    def _sync_constant(self, gamma):
+        from math import sqrt, pi
+        from astropy.constants import c, e, m_e
+        e = e.esu
+
+        #return ( (sqrt(3) * e**3) / (8*pi*m_e*c**2)
+                #*(4*pi*m_e*c/(3*e))**((1-gamma)/2) ) * c**((1-gamma)/2)
+        A = sqrt(3) * e**3 / (8*pi*m_e*c**2)
+        B = (4*pi*m_e*c**2 / (3*e))**((1-gamma)/2)
+        return A*B
+
     def simulate(self, key, coords_dict, realization_id, output_units):
 
         _, freq, _, flag = key
@@ -61,17 +74,18 @@ class SimpleSynchrotron(Simulator):
             self.Stokes['U'] = U
 
         sync_data = self.Stokes.pop(flag)
-        # TODO UNITS HAVE TO BE ADJUSTED!
-        # Cosmic ray particle's energy needs to be accounted for
-        sync_data *= u.K/u.pc/u.microgauss/u.microgauss*u.cm**3
+        sync_data_units = sync_data.unit
 
         # Now, we need to interpolate to the original image resolution
         # First, store the available coordinates
         x = self.grid.x[:,0,0].to_value(u.kpc)
         y = self.grid.y[0,:,0].to_value(u.kpc)
+
         # Setup the interpolator
         interpolator = RegularGridInterpolator(points=(x, y),
-                                               values=sync_data.to_value(output_units),
+                                               values=sync_data.value,
+                                               bounds_error=False,
+                                               fill_value=0,
                                                method=self.interp_method)
 
         # Now we convert the original Galactic coordinates into x and y
@@ -91,7 +105,31 @@ class SimpleSynchrotron(Simulator):
 
         interp_points = np.array([x_target, y_target]).T
 
-        result = interpolator(interp_points) << output_units
+        result = interpolator(interp_points) * sync_data_units
+
+        # Adjusts the units
+        sync_constant = self._sync_constant(self.gamma)
+
+        # The following is a hack to deal with a missing equivalency in
+        # astropy units
+        B_unit_adj = (1./u.gauss) * (u.Fr/u.cm**2)  # This should be 1
+        sync_constant *= B_unit_adj**((self.gamma+1)/2)
+
+        result = result * sync_constant
+
+        # The result, so far, corresponds to a surface density of luminosity,
+        # i.e. the energy per area in the remnant, but we want flux density,
+        # the energy per unit area at the detector, thus
+        result *= (x_range/nx)*(y_range/ny)/(self.distance)**2
+
+        # Finally, we want the surface brightness (the flux density per
+        # detector solid angle), i.e. we nee to account for the (pencil) beam
+        beam_size = (lon_range/nx)*(lat_range/ny)
+        result /= beam_size
+
+        # Converts into brightness temperature
+        result = result.to(u.K,
+                           equivalencies=u.brightness_temperature(freq<<u.GHz))
 
         return result.ravel()
 
