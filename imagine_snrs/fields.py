@@ -177,13 +177,13 @@ class EquipartitionCosmicRayElectrons(CosmicRayElectronSingleEnergyDensityField)
     proportional to the magnetic energy density.
 
     The field parameters are:
-    'Em_Ecr', the ratio between the energy density in cosmic ray electrons
+    'Ecr_Em', the ratio between the energy density in cosmic ray electrons
     and the energy density of the magnetic field
     """
 
     # Class attributes
     NAME = 'constant_CR'
-    PARAMETER_NAMES = ['Em_Ecr']
+    PARAMETER_NAMES = ['Ecr_Em']
     DEPENDENCIES_LIST = ['magnetic_field']
 
     def compute_field(self, seed):
@@ -194,7 +194,7 @@ class EquipartitionCosmicRayElectrons(CosmicRayElectronSingleEnergyDensityField)
         Em = Em * apu.microgauss**(-2) * apu.erg * apu.cm**(-3)
 
         ncr = np.empty(self.data_shape) << self.units
-        ncr[:,:,:,0] = Em / self.parameters['cr_energy'] * self.parameters['Em_Ecr']
+        ncr[:,:,:,0] = Em / self.parameters['cr_energy'] * self.parameters['Ecr_Em']
 
         return ncr
 

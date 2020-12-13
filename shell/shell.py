@@ -17,15 +17,15 @@ class ShellModel:
     elapsed_time : float
         Elapsed time in years
     """
-    def __init__(self, V0=0.0153*u.pc/u.yr, 
-                 a=1.3, b=10, 
-                 R=50*u.pc, 
+    def __init__(self, V0=0.0153*u.pc/u.yr,
+                 a=1.3, b=10,
+                 R=50*u.pc,
                  elapsed_time=1300*u.yr):
         assert a != 1
         assert b != 0
         # Stores parameters in fixed internal units
-        self.a = a
-        self.b = b
+        self.a = float(a)
+        self.b = float(b)
         self.V0 = V0.to_value(u.pc/u.yr)
         self.R = R.to_value(u.pc)
         self.t = elapsed_time.to_value(u.yr)
@@ -34,21 +34,21 @@ class ShellModel:
         """
         Computes Final (Eulerian) radius from Initial (Lagrangian)
         """
-        return _final_radius(r0.to_value(u.pc), self.t, 
-                             self.a, self.b, self.R, self.V0) * u.pc
+        return _final_radius(r0.to_value(u.pc), self.t,
+                             self.a, self.b, self.R, self.V0) << u.pc
 
     def initial_radius(self, r):
         """
         Computes Initial (Lagrangian) radius from Final (Eulerian)
         """
-        return _initial_radius(r.to_value(u.pc), self.t, 
-                               self.a, self.b, self.R, self.V0) * u.pc
+        return _initial_radius(r.to_value(u.pc), self.t,
+                               self.a, self.b, self.R, self.V0) << u.pc
 
     def dr_dr0(self, r, r0):
         """
         Derivative dr_dr0
         """
-        return _dr_dr0(r.to_value(u.pc), r0.to_value(u.pc), 
+        return _dr_dr0(r.to_value(u.pc), r0.to_value(u.pc),
                        self.a, self.b, self.R)
 
 # The following decorators vectorize (i.e. allow a scalar funtion to be
