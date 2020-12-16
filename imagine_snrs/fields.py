@@ -14,6 +14,14 @@ class SNRThermalElectrons(img.fields.ThermalElectronDensityField):
                        'shell_V0', 'shell_a', 'shell_b',
                        'elapsed_time', 'shell_radius']
 
+    def __init__(self, grid, *, parameters=dict(), ensemble_size=None,
+                 ensemble_seeds=None, dependencies={}, cache_dir=None):
+
+        self._cache_dir=cache_dir
+
+        super().__init__(grid=grid, parameters=parameters, ensemble_size=ensemble_size,
+                         ensemble_seeds=ensemble_seeds, dependencies=dependencies)
+
     def compute_field(self, seed):
 
         # Computes the shell model
@@ -24,7 +32,8 @@ class SNRThermalElectrons(img.fields.ThermalElectronDensityField):
                                  elapsed_time=self.parameters['elapsed_time'])
 
         # Prepares field transformer
-        self.field_transformer = FieldTransformer(self.grid, shell_model)
+        self.field_transformer = FieldTransformer(self.grid, shell_model,
+                                                  cache_dir=self._cache_dir)
 
         # Prepares and transforms the initial field
         ne_0 = np.ones(self.data_shape) * self.parameters['initial_electron_density']

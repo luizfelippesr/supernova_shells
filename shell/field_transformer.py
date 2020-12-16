@@ -1,5 +1,6 @@
 import numba as nb
 import numpy as np
+import joblib
 
 class FieldTransformer:
     """
@@ -17,8 +18,10 @@ class FieldTransformer:
         An instance of ShellModel, which characterizes the dynamics
         of the SN shell and contains the required coordinate
         transformations
+    cache_dir : str
+        If present,
     """
-    def __init__(self, grid, shell_model):
+    def __init__(self, grid, shell_model, cache_dir=None):
         # final distance r
         r = grid.r_spherical
 
@@ -49,6 +52,11 @@ class FieldTransformer:
 
         self._inv_J = None
 
+        if cache_dir is not None:
+            self._mem = joblib.Memory(cache_dir)
+        else:
+            self._mem = None
+
     @property
     def inv_J(self):
         """
@@ -61,7 +69,12 @@ class FieldTransformer:
 
         """
         if self._inv_J is None:
-            self._inv_J = _get_inv_J(self.dx_dx0, self.dx_dy0, self.dx_dz0,
+            if self._mem is not None:
+                get_inv_J = self._mem.cache(_get_inv_J)
+            else:
+                get_inv_J = _get_inv_J
+
+            self._inv_J = get_inv_J(self.dx_dx0, self.dx_dy0, self.dx_dz0,
                                      self.dy_dx0, self.dy_dy0, self.dy_dz0,
                                      self.dz_dx0, self.dz_dy0, self.dz_dz0)
         return self._inv_J
