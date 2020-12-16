@@ -43,7 +43,7 @@ class _SNR_DA530_base(img.observables.ImageDataset):
                        lat_min=val_min['GLAT-CAR'],
                        lat_max=val_max['GLAT-CAR'],
                        object_id='SNR G093.3+06.9',
-                       error=None, cov=None,
+                       error=1.7e-3*u.K, 
                        frequency=frequency,
                        tag=self._STOKES_PARAMETER)
 
