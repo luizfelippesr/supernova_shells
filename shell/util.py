@@ -1,5 +1,7 @@
 import numpy as np
 from numba import njit
+from math import sin, cos
+import astropy.units as u
 
 @njit(parallel=True)
 def derive(V, dx, axis=0, order=2):
@@ -90,3 +92,48 @@ def derive(V, dx, axis=0, order=2):
             raise ValueError('Only order 2 and 4 are currently implemented.')
 
     return dVdx
+
+
+
+def rotate_field(B, alpha, beta, gamma):
+    """
+    Applies a rotation matrix to a vector field
+    """
+    # Adjusts units, if necessary
+    alpha, beta, gamma = [a.to_value(u.rad) if hasattr(a, 'unit') else a
+                          for a in (alpha, beta, gamma)]
+
+    c, s = cos(alpha), sin(alpha)
+    rot_x = np.array([[ 1,  0,  0],
+                      [ 0,  c,  s],
+                      [ 1, -s,  c]])
+
+    c, s = cos(beta), sin(beta)
+    rot_y = np.array([[ c,  0, -s],
+                      [ 0,  1,  0],
+                      [ s,  0,  c]])
+
+    c, s = cos(gamma), sin(gamma)
+    rot_z = np.array([[ c,  s,  0],
+                      [-s,  c,  0],
+                      [ 0,  0,  1]])
+
+    rot = rot_z @ rot_y  @ rot_x
+
+    # If the input is a list of components, constructs the full array
+    if isinstance(B, (list, tuple)):
+        return_list = True
+        B_array = np.empty((*B[0].shape, 3)) * B[0].unit
+        for i, Bi in enumerate(B):
+          B_array[:,:,:,i] = Bi
+        B = B_array
+    else:
+        return_list = False
+
+    # Performs the rotation!
+    B = B @ rot.T
+
+    if return_list:
+        B = [B[...,i] for i in range(3)]
+
+    return B
