@@ -83,6 +83,47 @@ def plot_vector_xy(grid, vector_field, skip=3, name=r'\mathbf{B}',
     cax.set_label(r'${}\;\left[\,{}\,\right]$'.format(name, get_latex_units(B)))
     return fig
 
+def plot_vector_xz(grid, vector_field, skip=3, name=r'\mathbf{B}',
+                   pos=None, ax=None, fig=None, show_y_component=False,
+                   quiver_color='orange', contour_alpha=1,**kwargs):
+    """
+    Plots a slice of a vector field defined on a 3D cartesian grid
+    """
+    if ax is None:
+        if fig is None:
+            fig = plt.figure(dpi=150)
+        ax = fig.add_subplot(111)
+
+    if pos is None:
+        # If no position is supplied, take the middle!
+        pos = grid.resolution[2]//2
+
+    Bx, By, Bz = vector_field
+    if show_y_component:
+        B = By
+        vmax = np.max(np.abs(By.value))
+        if ('vmin' not in kwargs) and ('vmax' not in kwargs):
+            kwargs['vmin'] = -vmax
+            kwargs['vmax'] = vmax
+        if 'cmap' not in kwargs:
+            kwargs['cmap'] = 'coolwarm'
+    else:
+        B = np.sqrt(Bx**2+By**2+Bz**2)
+        name = '|'+name+'|'
+
+    im = ax.contourf(grid.x[:,pos,:],grid.y[:,pos,:], B[:,pos,:],
+                     alpha=contour_alpha, **kwargs)
+    # Quiver does not handle units well. Does, we select the values instead
+    ax.quiver(grid.x[::skip,pos,::skip].value, grid.z[::skip,pos,::skip].value,
+           Bx[::skip,pos,::skip].value, Bz[::skip,pos,::skip].value, color=quiver_color)
+
+    ax.set_aspect(1)
+    ax.set_xlabel(r'$x\;[\rm pc]$')
+    ax.set_ylabel(r'$z\;[\rm pc]$')
+    cax = plt.colorbar(im, ax=ax)
+    cax.set_label(r'${}\;\left[\,{}\,\right]$'.format(name, get_latex_units(B)))
+    return fig
+
 
 def plot_polarization_vector(grid, I, PI, PA, ax=None, fig=None,
                              colormesh=True, skip=3, **kwargs):
