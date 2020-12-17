@@ -53,7 +53,7 @@ class FieldTransformer:
         self._inv_J = None
 
         if cache_dir is not None:
-            self._mem = joblib.Memory(cache_dir)
+            self._mem = joblib.Memory(cache_dir, verbose=0)
         else:
             self._mem = None
 

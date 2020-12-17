@@ -3,13 +3,65 @@ Contain functions that allow constructing simple fields on a grid
 """
 import astropy.units as apu
 import numpy as np
-from shell.util import derive
+from shell.util import derive, rotate_field
+
 pi = np.pi*apu.rad
 sqrt2 = np.sqrt(2)
 
-def uniform(grid, B):
-    """Uniform field"""
-    return [Bi*np.ones(grid.shape) for Bi in B]
+def uniform(grid, B, alpha=0, beta=0, gamma=0):
+    """
+    A uniform magnetic field
+
+    Parameters
+    ----------
+    B : astropy.units.Quantity
+        Amplitude of the magnetic field
+    alpha, beta, gamma
+        Angles for the rotation matrices
+
+    Returns
+    -------
+    Bx, By, Bz
+        List containing the three components
+    """
+
+    # Helical parallel to x
+    Bvec = np.zeros((*grid.shape,3)) << B.unit
+    Bvec[:,:,:,0] = B
+
+    Bvec = rotate_field(Bvec, alpha, beta, gamma)
+
+    return [Bvec[...,i] for i in range(3)]
+
+
+def simple_helical(grid, B, period=70*apu.pc, alpha=0, beta=0, gamma=0):
+    """
+    Computes a simple helical field
+
+    Parameters
+    ----------
+    B : astropy.units.Quantity
+        Amplitude of the magnetic field
+    period
+        Period of the helical field
+    alpha, beta, gamma
+        Angles for the rotation matrices
+
+    Returns
+    -------
+    Bx, By, Bz
+        List containing the three components
+    """
+
+    # Helical parallel to x
+    Bx = np.ones(grid.shape) /sqrt2  * B
+    arg = pi*grid.x/period
+    By = np.cos(arg) /sqrt2 * B
+    Bz = np.sin(arg) /sqrt2 * B
+
+    return rotate_field([Bx, By, Bz], alpha, beta, gamma)
+
+
 
 def simple_random(grid, Brms):
     """
@@ -53,17 +105,15 @@ def simple_random(grid, Brms):
     return Brnd['x']*f, Brnd['y']*f,  Brnd['z']*f
 
 
-def helical_new(grid, B, period=70*apu.pc):
+def helical_alt(grid, B, period=70*apu.pc):
     """
     Computes a simple helical field
 
     Parameters
     ----------
-    B : list
-        List containing the three components of the reference vector. The
-        amplitude of the vector sets the amplitude of the magnetic field,
-        while the direction is used to choose the orientation of the helical
-        field.
+    B : float
+        Amplitude of the initial magnetic field
+
     period
         Period of the helical field
 
@@ -102,7 +152,10 @@ def helical(grid, B, period=70*apu.pc):
     """
     Computes a simple helical field
 
+    Note
+    ----
     Bogus version of the helical field
+
 
     Parameters
     ----------

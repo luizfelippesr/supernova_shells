@@ -15,7 +15,7 @@ class SNRThermalElectrons(img.fields.ThermalElectronDensityField):
                        'elapsed_time', 'shell_radius']
 
     def __init__(self, grid, *, parameters=dict(), ensemble_size=None,
-                 ensemble_seeds=None, dependencies={}, cache_dir=None):
+                 ensemble_seeds=None, dependencies={}, cache_dir='/run/shm/'):
 
         self._cache_dir=cache_dir
 
@@ -42,18 +42,17 @@ class SNRThermalElectrons(img.fields.ThermalElectronDensityField):
         return ne_shell
 
 
-class SNRHelicalMagneticField(img.fields.MagneticField):
+class SNRSimpleHelicalMagneticField(img.fields.MagneticField):
     """
     Magnetic field of a supernova remnant
     """
     NAME = 'SNR_helical_magnetic_field'
-    PARAMETER_NAMES = ['Bx', 'By', 'Bz', 'period']
+    PARAMETER_NAMES = ['B', 'alpha', 'beta', 'gamma', 'period']
     DEPENDENCIES_LIST = [SNRThermalElectrons]
 
     def compute_field(self, seed):
         # Computes initial field
-        B_input = [self.parameters[Bi] for Bi in ('Bx', 'By', 'Bz')]
-        Blist = fields.helical_new(self.grid, B_input, self.parameters['period'])
+        Blist = fields.simple_helical(self.grid, **self.parameters)
 
         # Transforms the initial field
         ne_obj = self.dependencies[SNRThermalElectrons]
@@ -71,14 +70,12 @@ class SNRUniformMagneticField(img.fields.MagneticField):
     Magnetic field of a supernova remnant
     """
     NAME = 'SNR_unif_magnetic_field'
-    PARAMETER_NAMES = ['Bx', 'By', 'Bz']
+    PARAMETER_NAMES = ['B', 'alpha', 'beta', 'gamma']
     DEPENDENCIES_LIST = [SNRThermalElectrons]
 
     def compute_field(self, seed):
         # Computes initial field
-
-        Blist = [ self.parameters[Bi]*np.ones(self.grid.shape)
-                  for Bi in ('Bx', 'By', 'Bz') ]
+        Blist = fields.uniform(self.grid, **self.parameters)
 
         # Transforms the initial field
         ne_obj = self.dependencies[SNRThermalElectrons]
