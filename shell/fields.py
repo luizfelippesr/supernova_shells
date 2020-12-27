@@ -8,16 +8,16 @@ from shell.util import derive, rotate_field
 pi = np.pi*apu.rad
 sqrt2 = np.sqrt(2)
 
-def uniform(grid, B, alpha=0, beta=0, gamma=0):
+def uniform(grid, B, beta=0, gamma=0):
     """
     A uniform magnetic field
 
     Parameters
     ----------
     B : astropy.units.Quantity
-        Amplitude of the magnetic field
-    alpha, beta, gamma
-        Angles for the rotation matrices
+        Amplitude of the magnetic field (originally along x)
+    beta, gamma
+        Angles for the rotation matrices (around y and z)
 
     Returns
     -------
@@ -29,7 +29,7 @@ def uniform(grid, B, alpha=0, beta=0, gamma=0):
     Bvec = np.zeros((*grid.shape,3)) << B.unit
     Bvec[:,:,:,0] = B
 
-    Bvec = rotate_field(Bvec, alpha, beta, gamma)
+    Bvec = rotate_field(Bvec, 0, beta, gamma)
 
     return [Bvec[...,i] for i in range(3)]
 

@@ -70,7 +70,7 @@ class SNRUniformMagneticField(img.fields.MagneticField):
     Magnetic field of a supernova remnant
     """
     NAME = 'SNR_unif_magnetic_field'
-    PARAMETER_NAMES = ['B', 'alpha', 'beta', 'gamma']
+    PARAMETER_NAMES = ['B', 'beta', 'gamma']
     DEPENDENCIES_LIST = [SNRThermalElectrons]
 
     def compute_field(self, seed):

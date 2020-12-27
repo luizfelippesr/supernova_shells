@@ -48,13 +48,11 @@ te_factory = FieldFactory(grid=grid,
 
 B_uniform_factory  = FieldFactory(grid=grid,
                                   field_class=img_snrs.fields.SNRUniformMagneticField,
-                                  active_parameters =('B', 'alpha', 'beta', 'gamma'),
+                                  active_parameters =('B', 'beta', 'gamma'),
                                   default_parameters={'B': 2*u.microgauss,
-                                                      'alpha': 0*u.deg,
                                                       'beta': 0*u.deg,
                                                       'gamma': 0*u.deg},
                                     priors={'B': FlatPrior(0, 10, u.microgauss),
-                                            'alpha': FlatPrior(-180, 180, u.deg),
                                             'beta': FlatPrior(-90, 90, u.deg),
                                                 'gamma': FlatPrior(-180, 180, u.deg)})
 B_helical_factory  = FieldFactory(grid=grid,
@@ -83,17 +81,19 @@ CR_factory = FieldFactory(grid=grid,
 
 pipeline_uniform = img.pipelines.UltranestPipeline(
     run_directory='uniform_field', simulator=simulator, likelihood=likelihood,
-    factory_list=[B_helical_factory, CR_factory, te_factory])
+    factory_list=[B_uniform_factory, CR_factory, te_factory])
 pipeline_uniform.name = 'Uniform initial magnetic field'
-pipeline_uniform.sampling_controllers={'min_num_live_points':100}
+pipeline_uniform.sampling_controllers={'min_num_live_points':200}
 
 pipeline_simple_helical = img.pipelines.UltranestPipeline(
     run_directory='simple_helical_field', simulator=simulator, likelihood=likelihood,
     factory_list=[B_helical_factory, CR_factory, te_factory])
 pipeline_simple_helical.name = 'Simple helical initial magnetic field'
-pipeline_simple_helical.sampling_controllers={'min_num_live_points':100}
+pipeline_simple_helical.sampling_controllers={'min_num_live_points':200}
 
-pipelines = [pipeline_uniform, pipeline_simple_helical]
+pipelines = [pipeline_uniform]
 
 for p in pipelines:
+    print('Saving', p.name)
     p.save()
+
