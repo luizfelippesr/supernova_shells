@@ -94,6 +94,7 @@ pipeline_simple_helical.sampling_controllers={'min_num_live_points':200}
 pipelines = [pipeline_uniform]
 
 for p in pipelines:
+    p.likelihood_rescaler = 1e-9
     print('Saving', p.name)
     p.save()
 
