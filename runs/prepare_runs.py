@@ -91,7 +91,7 @@ pipeline_simple_helical = img.pipelines.UltranestPipeline(
 pipeline_simple_helical.name = 'Simple helical initial magnetic field'
 pipeline_simple_helical.sampling_controllers={'min_num_live_points':200}
 
-pipelines = [pipeline_uniform]
+pipelines = [pipeline_simple_helical, pipeline_uniform]
 
 for p in pipelines:
     p.likelihood_rescaler = 1e-9
