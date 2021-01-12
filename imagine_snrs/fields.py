@@ -4,7 +4,7 @@ import astropy.units as apu
 sys.path.append('../')
 
 import imagine as img
-from shell import ShellModel, FieldTransformer, fields
+from shell import ShellModel, FieldTransformer, fields, CK_field
 
 class SNRThermalElectrons(img.fields.ThermalElectronDensityField):
     """Example: thermal electron density of an (double) exponential disc"""
@@ -41,6 +41,32 @@ class SNRThermalElectrons(img.fields.ThermalElectronDensityField):
 
         return ne_shell
 
+
+class SNR_CK_MagneticField(img.fields.MagneticField):
+    """
+    Magnetic field of a supernova remnant where the ambient initial field
+    was a Chandrasekhar-Kendall magnetic field
+    """
+    NAME = 'SNR_CK_magnetic_field'
+    PARAMETER_NAMES = ['B', 'm', 'period', 'period_z',
+                       'x_shift', 'y_shift', 'z_shift',
+                       'alpha', 'beta', 'gamma']
+
+    DEPENDENCIES_LIST = [SNRThermalElectrons]
+
+    def compute_field(self, seed):
+        # Computes initial field
+        Blist = CK_field.CK_magnetic_field(self.grid, **self.parameters)
+
+        # Transforms the initial field
+        ne_obj = self.dependencies[SNRThermalElectrons]
+        Bx, By, Bz = ne_obj.field_transformer.transform_magnetic_field(*Blist)
+
+        B = np.empty(self.data_shape) << Bx.unit
+        for i, Bc in enumerate([Bx, By, Bz]):
+            B[:,:,:,i] = Bc
+
+        return B
 
 class SNRSimpleHelicalMagneticField(img.fields.MagneticField):
     """
