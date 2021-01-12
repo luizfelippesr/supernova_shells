@@ -111,7 +111,7 @@ def plot_vector_xz(grid, vector_field, skip=3, name=r'\mathbf{B}',
         B = np.sqrt(Bx**2+By**2+Bz**2)
         name = '|'+name+'|'
 
-    im = ax.contourf(grid.x[:,pos,:],grid.y[:,pos,:], B[:,pos,:],
+    im = ax.contourf(grid.x[:,pos,:],grid.z[:,pos,:], B[:,pos,:],
                      alpha=contour_alpha, **kwargs)
     # Quiver does not handle units well. Does, we select the values instead
     ax.quiver(grid.x[::skip,pos,::skip].value, grid.z[::skip,pos,::skip].value,
