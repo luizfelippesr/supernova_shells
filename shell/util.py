@@ -106,7 +106,7 @@ def rotate_field(B, alpha, beta, gamma):
     c, s = cos(alpha), sin(alpha)
     rot_x = np.array([[ 1,  0,  0],
                       [ 0,  c,  s],
-                      [ 1, -s,  c]])
+                      [ 0, -s,  c]])
 
     c, s = cos(beta), sin(beta)
     rot_y = np.array([[ c,  0, -s],
