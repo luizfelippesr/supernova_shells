@@ -68,6 +68,33 @@ class SNR_CK_MagneticField(img.fields.MagneticField):
 
         return B
 
+class SNR_BMF_MagneticField(img.fields.MagneticField):
+    """
+    Magnetic field of a supernova remnant where the ambient initial field
+    was a Bessel Function Model (Chandrasekhar-Kendall magnetic field with
+    m=0 and k=0).
+    """
+    NAME = 'SNR_BMF_magnetic_field'
+    PARAMETER_NAMES = ['B', 'period',
+                       'x_shift', 'y_shift', 'z_shift',
+                       'alpha', 'beta']
+
+    DEPENDENCIES_LIST = [SNRThermalElectrons]
+
+    def compute_field(self, seed):
+        # Computes initial field
+        Blist = CK_field.BMF_magnetic_field(self.grid, **self.parameters)
+
+        # Transforms the initial field
+        ne_obj = self.dependencies[SNRThermalElectrons]
+        Bx, By, Bz = ne_obj.field_transformer.transform_magnetic_field(*Blist)
+
+        B = np.empty(self.data_shape) << Bx.unit
+        for i, Bc in enumerate([Bx, By, Bz]):
+            B[:,:,:,i] = Bc
+
+        return B
+
 class SNRSimpleHelicalMagneticField(img.fields.MagneticField):
     """
     Magnetic field of a supernova remnant

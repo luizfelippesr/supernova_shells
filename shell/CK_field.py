@@ -74,6 +74,62 @@ def _CK_magnetic_field_core(grid, B=1*apu.microgauss,
     return [Bx, By, Bz]
 
 
+def BMF_magnetic_field(grid, B=1*apu.microgauss, m=0,
+                      period=50*apu.pc, period_z=np.inf*apu.pc,
+                      x_shift=0*apu.pc, y_shift=0*apu.pc,
+                      alpha=0, beta=0, gamma=0):
+    """
+    Computes a Bessel Function Model, i.e. a Chandrasekhar-Kendall field,
+    were m=0 and k=0 (period_z=infinity).
+
+    Note
+    ----
+    This is slightly faster than seting m=0 and k=0 in the CK field.
+
+    Parameters
+    ----------
+    B : astropy.units.Quantity
+        Amplitude of the magnetic field
+    period : astropy.units.Quantity
+        Period of the helical field (in x, y)
+    period_z : astropy.units.Quantity
+        Period of the helical field (in z)
+    alpha, beta, gamma
+        Angles for the rotation matrices
+    x_shift, y_shift
+        Translation of the CK solution
+
+    Returns
+    -------
+    [Bx, By, Bz] : list
+        List containing the three components of the field
+    """
+    # Notation adjustment
+    l = 1/period
+
+    # Shifted grid
+    sgrid = ShifftedGrid(grid, x_shift, y_shift, 0*apu.pc)
+    r = sgrid.r_cylindrical
+    phi = sgrid.phi
+    z = sgrid.z
+
+    # Intermediate quantities (which appear repeated)
+    lr = l*r
+    J = jv(m, lr)
+
+    # Field in cylindrical coordinates
+    Br   = np.zeros(sgrid.shape)*B.unit
+    Bphi = B*jv(1, lr)
+    Bz   = B*jv(0, lr)
+
+    # Conversion to cartesian
+    Bx = Br*grid.cos_phi - Bphi*grid.sin_phi
+    By = Br*grid.sin_phi + Bphi*grid.cos_phi
+
+    return rotate_field([Bx, By, Bz], alpha, beta, gamma)
+
+
+
 class ShifftedGrid(BaseGrid):
     """
     Creates a new grid object where the cartesian coordinates
