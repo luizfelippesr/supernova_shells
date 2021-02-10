@@ -15,7 +15,7 @@ class SNRThermalElectrons(img.fields.ThermalElectronDensityField):
                        'elapsed_time', 'shell_radius']
 
     def __init__(self, grid, *, parameters=dict(), ensemble_size=None,
-                 ensemble_seeds=None, dependencies={}, cache_dir='/run/shm/'):
+                 ensemble_seeds=None, dependencies={}, cache_dir=img.rc['temp_dir']):
 
         self._cache_dir=cache_dir
 
