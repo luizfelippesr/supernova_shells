@@ -79,6 +79,38 @@ def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
 
     return I, U, Q
 
+def compute_fd(grid, Bz, ne, beam_kernel_sd=None):
+    """
+    Computes RM/faraday depth
+
+    Parameters
+    ----------
+    grid : imagine.fields.grid.Grid
+        A *cartesian* IMAGINE grid object
+    Bz : astropy.units.Quantity
+        Magnetic field Bz components
+    ne : astropy.units.Quantity
+        Thermal electron density
+    beam_kernel_sd : float
+        If different from `None`, the resulting signal is convolved with
+        a gaussian kernel with standard deviation `beam_kernel_sd` (in pixels).
+        Otherwise, a pencil beam is assumed.
+
+    Returns
+    -------
+    RM : astropy.units.Quantity
+        Faraday depth
+    """
+
+    integrand = Bz.to_value(u.microgauss)*ne.to_value(u.cm**-3)
+    RM = (0.812*u.rad/u.m**2) * trapz(integrand, grid.z.to_value(u.pc),
+                                          axis=2)
+    if beam_kernel_sd is not None:
+        RM = gaussian_filter(RM.value, sigma=beam_kernel_sd)*RM.unit
+
+    return RM
+
+
 
 def compute_Psi(U, Q):
     """

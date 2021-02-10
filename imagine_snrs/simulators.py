@@ -2,7 +2,7 @@ import astropy.units as u
 import numpy as np
 
 from imagine.simulators import Simulator
-from shell.observable import compute_stokes_parameters
+from shell.observable import compute_stokes_parameters, compute_fd
 from scipy.interpolate import RegularGridInterpolator
 
 import astropy.units as u
@@ -36,20 +36,22 @@ class SimpleSynchrotron(Simulator):
         images in the `measurements`.
     """
     # Class attributes
-    SIMULATED_QUANTITIES = ['sync']
+    SIMULATED_QUANTITIES = ['sync', 'fd']
     REQUIRED_FIELD_TYPES = ['magnetic_field',
                             'cosmic_ray_electron_density',
                             'thermal_electron_density']
     ALLOWED_GRID_TYPES = ['cartesian']
 
-    def __init__(self, measurements, distance, gamma=1.0, beam_kernel_sd=None,
-                 interp_method='nearest'):
+    def __init__(self, measurements, distance, gamma=1.0, wavelength_factor=1.01,
+                 beam_kernel_sd=None, backlit_RM=True, interp_method='nearest'):
         super().__init__(measurements)
         self.gamma = gamma
         self.Stokes = {}
         self.interp_method = interp_method
         self.distance = distance
         self.beam_kernel_sd = beam_kernel_sd
+        self.backlit_RM = backlit_RM
+        self.wavelength_factor = wavelength_factor
 
     def _units(self, key):
         if key[0] == 'sync':
@@ -80,7 +82,15 @@ class SimpleSynchrotron(Simulator):
 
     def simulate(self, key, coords_dict, realization_id, output_units):
 
-        _, freq, _, flag = key
+        obs_name, freq, _, flag = key
+
+        if obs_name == 'fd':
+            flag = 'fd'
+            if self.backlit_RM:
+                self.Stokes['fd'] = compute_fd(self.grid,
+                                               self.fields['magnetic_field'][:,:,:,2],
+                                               self.fields['thermal_electron_density'],
+                                               beam_kernel_sd=self.beam_kernel_sd)
 
         if flag not in self.Stokes:
             # Accesses fields and grid
@@ -96,13 +106,23 @@ class SimpleSynchrotron(Simulator):
                                                 Bx, By, Bz,
                                                 ne, ncr, gamma=self.gamma,
                                                 beam_kernel_sd=self.beam_kernel_sd)
-
             self.Stokes['I'] = I
             self.Stokes['Q'] = Q
             self.Stokes['U'] = U
 
-        sync_data = self.Stokes.pop(flag)
-        sync_data_units = sync_data.unit
+            if ('fd' in [k[0] for k in self.observables]) and (not self.backlit_RM):
+                wavelength2 = wavelength * self.wavelength_factor
+                _, U2, Q2 = compute_stokes_parameters(grid, wavelength2,
+                                                       Bx, By, Bz,
+                                                       ne, ncr, gamma=self.gamma,
+                                                       beam_kernel_sd=self.beam_kernel_sd)
+                Psi1 = compute_Psi(U, Q)
+                Psi2 = compute_Psi(U2, Q2)
+                RM = compute_RM(Psi1, Psi2, wavelength, wavelength2)
+                self.Stokes['fd'] = RM
+
+        out_data = self.Stokes.pop(flag)
+        out_data_units = out_data.unit
 
         # Now, we need to interpolate to the original image resolution
         # First, store the available coordinates
@@ -111,7 +131,7 @@ class SimpleSynchrotron(Simulator):
 
         # Setup the interpolator
         interpolator = RegularGridInterpolator(points=(x, y),
-                                               values=sync_data.value,
+                                               values=out_data.value,
                                                bounds_error=False,
                                                fill_value=0,
                                                method=self.interp_method)
@@ -133,31 +153,32 @@ class SimpleSynchrotron(Simulator):
 
         interp_points = np.array([x_target, y_target]).T
 
-        result = interpolator(interp_points) * sync_data_units
+        result = interpolator(interp_points) * out_data_units
 
         # Adjusts the units
-        sync_constant = self._sync_constant(self.gamma)
+        if obs_name == 'sync':
+            sync_constant = self._sync_constant(self.gamma)
 
-        # The following is a hack to deal with a missing equivalency in
-        # astropy units
-        B_unit_adj = (1./u.gauss) * (u.Fr/u.cm**2)  # This should be 1
-        sync_constant *= B_unit_adj**((self.gamma+1)/2)
+            # The following is a hack to deal with a missing equivalency in
+            # astropy units
+            B_unit_adj = (1./u.gauss) * (u.Fr/u.cm**2)  # This should be 1
+            sync_constant *= B_unit_adj**((self.gamma+1)/2)
 
-        result = result * sync_constant
+            result = result * sync_constant
 
-        # The result, so far, corresponds to a surface density of luminosity,
-        # i.e. the energy per area in the remnant, but we want flux density,
-        # the energy per unit area at the detector, thus
-        result *= (x_range/nx)*(y_range/ny)/(self.distance)**2
+            # The result, so far, corresponds to a surface density of luminosity,
+            # i.e. the energy per area in the remnant, but we want flux density,
+            # the energy per unit area at the detector, thus
+            result *= (x_range/nx)*(y_range/ny)/(self.distance)**2
 
-        # Finally, we want the surface brightness (the flux density per
-        # detector solid angle), i.e. we nee to account for the (pencil) beam
-        beam_size = (lon_range/nx)*(lat_range/ny)
-        result /= beam_size
+            # Finally, we want the surface brightness (the flux density per
+            # detector solid angle), i.e. we nee to account for the (pencil) beam
+            beam_size = (lon_range/nx)*(lat_range/ny)
+            result /= beam_size
 
-        # Converts into brightness temperature
-        result = result.to(u.K,
-                           equivalencies=u.brightness_temperature(freq<<u.GHz))
+            # Converts into brightness temperature
+            result = result.to(u.K,
+                              equivalencies=u.brightness_temperature(freq<<u.GHz))
 
         return result.ravel()
 
