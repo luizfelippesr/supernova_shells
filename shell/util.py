@@ -3,7 +3,7 @@ from numba import njit
 from math import sin, cos
 import astropy.units as u
 
-@njit(parallel=True)
+@njit #(parallel=True)
 def derive(V, dx, axis=0, order=2):
     """
     Computes the numerical derivative of a function specified over a
