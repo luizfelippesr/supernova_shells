@@ -2,7 +2,7 @@ import astropy.units as u
 import numpy as np
 
 from imagine.simulators import Simulator
-from shell.observable import compute_stokes_parameters, compute_fd
+import shell.observable as obs
 from scipy.interpolate import RegularGridInterpolator
 
 import astropy.units as u
@@ -87,10 +87,10 @@ class SimpleSynchrotron(Simulator):
         if obs_name == 'fd':
             flag = 'fd'
             if self.backlit_RM:
-                self.Stokes['fd'] = compute_fd(self.grid,
-                                               self.fields['magnetic_field'][:,:,:,2],
-                                               self.fields['thermal_electron_density'],
-                                               beam_kernel_sd=self.beam_kernel_sd)
+                self.Stokes['fd'] = obs.compute_fd(
+                    self.grid, self.fields['magnetic_field'][:,:,:,2],
+                    self.fields['thermal_electron_density'],
+                    beam_kernel_sd=self.beam_kernel_sd)
 
         if flag not in self.Stokes:
             # Accesses fields and grid
@@ -102,23 +102,23 @@ class SimpleSynchrotron(Simulator):
 
             wavelength = (freq*u.GHz).to(u.cm, equivalencies=u.spectral())
 
-            I, U, Q = compute_stokes_parameters(grid, wavelength,
-                                                Bx, By, Bz,
-                                                ne, ncr, gamma=self.gamma,
-                                                beam_kernel_sd=self.beam_kernel_sd)
+            I, U, Q = obs.compute_stokes_parameters(grid, wavelength,
+                                                    Bx, By, Bz,
+                                                    ne, ncr, gamma=self.gamma,
+                                                    beam_kernel_sd=self.beam_kernel_sd)
             self.Stokes['I'] = I
             self.Stokes['Q'] = Q
             self.Stokes['U'] = U
 
             if ('fd' in [k[0] for k in self.observables]) and (not self.backlit_RM):
                 wavelength2 = wavelength * self.wavelength_factor
-                _, U2, Q2 = compute_stokes_parameters(grid, wavelength2,
-                                                       Bx, By, Bz,
-                                                       ne, ncr, gamma=self.gamma,
-                                                       beam_kernel_sd=self.beam_kernel_sd)
-                Psi1 = compute_Psi(U, Q)
-                Psi2 = compute_Psi(U2, Q2)
-                RM = compute_RM(Psi1, Psi2, wavelength, wavelength2)
+                _, U2, Q2 = obs.compute_stokes_parameters(grid, wavelength2,
+                                                          Bx, By, Bz,
+                                                          ne, ncr, gamma=self.gamma,
+                                                          beam_kernel_sd=self.beam_kernel_sd)
+                Psi1 = obs.compute_Psi(U, Q)
+                Psi2 = obs.compute_Psi(U2, Q2)
+                RM = obs.compute_RM(Psi1, Psi2, wavelength, wavelength2)
                 self.Stokes['fd'] = RM
 
         out_data = self.Stokes.pop(flag)
