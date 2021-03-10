@@ -3,19 +3,23 @@ import numpy as np
 from numba import jit, njit, vectorize
 import astropy.units as u
 from scipy.ndimage import gaussian_filter
+import warnings
 
 pi = np.pi*u.rad # convenience
 integrate = trapz
 
-def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
+def compute_stokes_parameters(depth_grid, wavelength, Bx, By, Bz,
                               ne, ncr, gamma=3, beam_kernel_sd=None):
     """
     Computes Stokes I, Q, U integrated along z axis
 
     Parameters
     ----------
-    grid : imagine.fields.grid.Grid
-        A *cartesian* IMAGINE grid object
+    depth_grid : imagine.fields.grid.Grid
+        A grid containing the line-of-sight depth data (e.g. if the LoS is
+        parallel to the z axis, this contains the z coordinate for each point
+        in the grid). NB the depth axis should correspond to the `axis=2` for
+        all gridded quantities.
     wavelength : stropy.units.Quantity
         The wavelength of the observation
     Bx, By, Bz : astropy.units.Quantity
@@ -40,15 +44,27 @@ def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
     U : astropy.units.Quantity
         Stokes U parameter intensity (arbitrary units)
     """
+
+    if hasattr(depth_grid,'z'):
+        warnings.warn("The synthax of this function has changed: one should "
+                      "provide a depth grid (array) instead of a full IMAGINE grid", DeprecationWarning)
+        depth_grid = depth_grid.z
+
     Bperp2 = Bx**2+By**2
 
     emissivity = ncr * Bperp2**((gamma+1)/4) * wavelength**((gamma-1)/2)
 
     # Total synchrotron intensity
-    I = integrate(emissivity, grid.z, axis=2)
+    I = integrate(emissivity, depth_grid, axis=2)
 
     # Intrinsic polarization angles
     psi0 = np.arctan(By/Bx) + pi/2
+    
+    # Deals with the case where By and Bx are *exact* zero
+    # (generally, this is an artifact of interpolation)
+    ok = (By == 0) * (Bx == 0)
+    psi0[ok] = 0
+    
     # Keeps angles in the [-pi pi] interval
     psi0[psi0>pi] = psi0[psi0>pi]-2*pi
     psi0[psi0<-pi] = psi0[psi0<-pi]+2*pi
@@ -57,7 +73,7 @@ def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
     if wavelength != 0:
         integrand = Bz.to_value(u.microgauss)*ne.to_value(u.cm**-3)
         RM = (0.812*u.rad/u.m**2) * cumtrapz(integrand,
-                                             grid.z.to_value(u.pc),
+                                             depth_grid.to_value(u.pc),
                                              axis=2, initial=0)
     else:
         # Avoids unnecessary calculation
@@ -65,13 +81,13 @@ def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
 
     # Rotated polarization angle grid
     psi = psi0 + wavelength**2*RM
-
+    
     # Intrinsic polarization degree
     p0 = (gamma+1)/(gamma+7/3)
 
-    # # Stokes Q and U
-    U = p0*integrate(emissivity * np.sin(2*psi), grid.z, axis=2)
-    Q = p0*integrate(emissivity * np.cos(2*psi), grid.z, axis=2)
+    # Stokes Q and U
+    U = p0*integrate(emissivity * np.sin(2*psi), depth_grid, axis=2)
+    Q = p0*integrate(emissivity * np.cos(2*psi), depth_grid, axis=2)
 
     if beam_kernel_sd is not None:
         I, U, Q = [ gaussian_filter(Stokes.value, sigma=beam_kernel_sd)*Stokes.unit
@@ -79,14 +95,17 @@ def compute_stokes_parameters(grid, wavelength, Bx, By, Bz,
 
     return I, U, Q
 
-def compute_fd(grid, Bz, ne, beam_kernel_sd=None):
+def compute_fd(depth_grid, Bz, ne, beam_kernel_sd=None):
     """
     Computes RM/faraday depth
 
     Parameters
     ----------
-    grid : imagine.fields.grid.Grid
-        A *cartesian* IMAGINE grid object
+    depth_grid : imagine.fields.grid.Grid
+        A grid containing the line-of-sight depth data (e.g. if the LoS is
+        parallel to the z axis, this contains the z coordinate for each point
+        in the grid). NB the depth axis should correspond to the `axis=2` for
+        all gridded quantities.
     Bz : astropy.units.Quantity
         Magnetic field Bz components
     ne : astropy.units.Quantity
@@ -101,9 +120,15 @@ def compute_fd(grid, Bz, ne, beam_kernel_sd=None):
     RM : astropy.units.Quantity
         Faraday depth
     """
+    if hasattr(depth_grid,'z'):
+        warnings.warn("The synthax of this function has changed: one should "
+                      "provide a depth grid (array) instead of a full IMAGINE grid",
+                      DeprecationWarning)
+        depth_grid = depth_grid.z
 
     integrand = Bz.to_value(u.microgauss)*ne.to_value(u.cm**-3)
-    RM = (0.812*u.rad/u.m**2) * trapz(integrand, grid.z.to_value(u.pc),
+
+    RM = (0.812*u.rad/u.m**2) * trapz(integrand, depth_grid.to_value(u.pc),
                                           axis=2)
     if beam_kernel_sd is not None:
         RM = gaussian_filter(RM.value, sigma=beam_kernel_sd)*RM.unit

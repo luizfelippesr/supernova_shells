@@ -141,8 +141,8 @@ class SimpleSynchrotron(Simulator):
         coords = self.output_coords[key]
         nx, ny = coords['shape']
 
-        lon_range = np.abs(coords['lon_max']-coords['lon_min'])
-        lat_range = np.abs(coords['lat_max']-coords['lat_min'])
+        lon_range = np.abs(coords['lon_max'] - coords['lon_min'])
+        lat_range = np.abs(coords['lat_max'] - coords['lat_min'])
 
         x_range = lon_range.to_value(u.rad) * self.distance
         y_range = lat_range.to_value(u.rad) * self.distance

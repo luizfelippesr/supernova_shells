@@ -9,7 +9,7 @@ from shell import ShellModel, FieldTransformer, fields, CK_field
 class SNRThermalElectrons(img.fields.ThermalElectronDensityField):
     """Example: thermal electron density of an (double) exponential disc"""
 
-    NAME = 'SNR_magnetic_field'
+    NAME = 'SNR_thermal_electrons'
     PARAMETER_NAMES = ['initial_electron_density',
                        'shell_V0', 'shell_a', 'shell_b',
                        'elapsed_time', 'shell_radius']
