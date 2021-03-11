@@ -29,7 +29,8 @@ def uniform(grid, B, beta=0, gamma=0):
     Bvec = np.zeros((*grid.shape,3)) << B.unit
     Bvec[:,:,:,0] = B
 
-    Bvec = rotate_field(Bvec, 0, beta, gamma)
+    if (beta != 0) or (gamma != 0):
+        Bvec = rotate_field(Bvec, 0, beta, gamma)
 
     return [Bvec[...,i] for i in range(3)]
 
@@ -59,7 +60,10 @@ def simple_helical(grid, B, period=70*apu.pc, alpha=0, beta=0, gamma=0):
     By = np.cos(arg) /sqrt2 * B
     Bz = np.sin(arg) /sqrt2 * B
 
-    return rotate_field([Bx, By, Bz], alpha, beta, gamma)
+    if (alpha != 0) or (beta != 0) or (gamma != 0):
+        Bx, By, Bz = rotate_field([Bx, By, Bz], alpha, beta, gamma)
+
+    return Bx, By, Bz
 
 
 

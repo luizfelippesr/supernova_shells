@@ -68,7 +68,7 @@ class SNR_CK_MagneticField(img.fields.MagneticField):
 
         return B
 
-class SNR_BMF_MagneticField(img.fields.MagneticField):
+class SNR_BFM_MagneticField(img.fields.MagneticField):
     """
     Magnetic field of a supernova remnant where the ambient initial field
     was a Bessel Function Model (Chandrasekhar-Kendall magnetic field with
@@ -94,6 +94,15 @@ class SNR_BMF_MagneticField(img.fields.MagneticField):
             B[:,:,:,i] = Bc
 
         return B
+
+def SNR_BMF_MagneticField(*args, **kwargs):
+    # Preserves typo for backwards compatibility
+    import warnings
+    warnings.warn("Please replace the acronym BMF by BFM in your code, "
+                  "as this refers to a Bessel Function Model!",
+                  DeprecationWarning)
+    return SNR_BFM_MagneticField(*args, **kwargs)
+
 
 class SNRSimpleHelicalMagneticField(img.fields.MagneticField):
     """

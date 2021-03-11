@@ -37,7 +37,11 @@ def CK_magnetic_field(grid, B=1*apu.microgauss, m=0,
                                            B=B, m=m, period=period,
                                            period_z=period_z)
 
-    return rotate_field([Bx, By, Bz], alpha, beta, gamma)
+
+    if (alpha != 0) or (beta != 0) or (gamma != 0):
+        Bx, By, Bz = rotate_field([Bx, By, Bz], alpha, beta, gamma)
+
+    return Bx, By, Bz
 
 
 def _CK_magnetic_field_core(grid, B=1*apu.microgauss,
@@ -74,7 +78,7 @@ def _CK_magnetic_field_core(grid, B=1*apu.microgauss,
     return [Bx, By, Bz]
 
 
-def BMF_magnetic_field(grid, B=1*apu.microgauss, m=0,
+def BFM_magnetic_field(grid, B=1*apu.microgauss, m=0,
                       period=50*apu.pc, period_z=np.inf*apu.pc,
                       x_shift=0*apu.pc, y_shift=0*apu.pc,
                       alpha=0, beta=0, gamma=0):
@@ -126,8 +130,19 @@ def BMF_magnetic_field(grid, B=1*apu.microgauss, m=0,
     Bx = Br*grid.cos_phi - Bphi*grid.sin_phi
     By = Br*grid.sin_phi + Bphi*grid.cos_phi
 
-    return rotate_field([Bx, By, Bz], alpha, beta, gamma)
+    if (alpha != 0) or (beta != 0) or (gamma != 0):
+        Bx, By, Bz = rotate_field([Bx, By, Bz], alpha, beta, gamma)
 
+    return Bx, By, Bz
+
+
+def BMF_magnetic_field(*args, **kwargs):
+    # Preserves typo for backwards compatibility
+    import warnings
+    warnings.warn("Please replace the acronym BMF by BFM in your code, "
+                  "as this refers to a Bessel Function Model!",
+                  DeprecationWarning)
+    return BFM_magnetic_field(*args, **kwargs)
 
 
 class ShifftedGrid(BaseGrid):
