@@ -11,7 +11,7 @@ import imagine_datasets as img_data
 __all__ = ['SNR_DA530_I', 'SNR_DA530_Q', 'SNR_DA530_U', 'SNR_DA530_FD']
 
 class _SNR_DA530_base(img.observables.ImageDataset):
-    def __init__(self):
+    def __init__(self, crop_lon=None, crop_lat=None):
 
         filename = '../data/{}_DA530.fits'.format(self._OTYPE)
         hdu = fits.open(filename)[0]
@@ -49,15 +49,27 @@ class _SNR_DA530_base(img.observables.ImageDataset):
             error = 1.7e-3
             tag = self._OTYPE
 
+        lon_min=val_min['GLON-CAR']
+        lon_max=val_max['GLON-CAR']
+        lat_min=val_min['GLAT-CAR']
+        lat_max=val_max['GLAT-CAR']
+        
+        if crop_lon is not None:
+            lon_range = np.linspace(lon_min, lon_max, data.shape[0])
+            lon_min, lon_max = lon_range[crop_lon], lon_range[-crop_lon]
+            data = data[:, crop_lon:-crop_lon]
+            
+        if crop_lat is not None:
+            lat_range = np.linspace(lat_min, lat_max, data.shape[1])
+            lat_min, lat_max = lat_range[crop_lat], lat_range[-crop_lat]
+            data = data[crop_lat:-crop_lat, :]
+        
         super().__init__(data << unit, otype,
-                         lon_min=val_min['GLON-CAR'],
-                         lon_max=val_max['GLON-CAR'],
-                         lat_min=val_min['GLAT-CAR'],
-                         lat_max=val_max['GLAT-CAR'],
+                         lon_min=lon_min, lon_max=lon_max,
+                         lat_min=lat_min, lat_max=lat_max,
                          object_id='SNR G093.3+06.9',
                          error=error << unit,
-                         frequency=frequency,
-                         tag=tag)
+                         frequency=frequency, tag=tag)
 
 
 
