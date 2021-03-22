@@ -8,12 +8,15 @@ import imagine as img
 import imagine_datasets as img_data
 
 
-__all__ = ['SNR_DA530_I', 'SNR_DA530_Q', 'SNR_DA530_U', 'SNR_DA530_FD']
+__all__ = ['SNR_DA530_I_1420MHz', 'SNR_DA530_Q_1420MHz', 'SNR_DA530_U_1420MHz', 
+           'SNR_DA530_I_4850MHz', 'SNR_DA530_Q_4850MHz', 'SNR_DA530_U_4850MHz',
+           'SNR_DA530_I_10450MHz', 'SNR_DA530_Q_10450MHz', 'SNR_DA530_U_10450MHz',
+           'SNR_DA530_FD']
 
 class _SNR_DA530_base(img.observables.ImageDataset):
     def __init__(self, crop_lon=None, crop_lat=None):
 
-        filename = '../data/{}_DA530.fits'.format(self._OTYPE)
+        filename = '../data/{}_DA530{}.fits'.format(self._OTYPE, self._FREQ)
         hdu = fits.open(filename)[0]
         data = hdu.data[0,0].T
         header = hdu.header
@@ -40,7 +43,7 @@ class _SNR_DA530_base(img.observables.ImageDataset):
         if self._OTYPE == 'RM':
             otype = 'fd'
             unit = u.rad/u.m/u.m
-            error = 1.7e-3
+            error = 20
             tag = None
             frequency=None
         else:
@@ -72,20 +75,52 @@ class _SNR_DA530_base(img.observables.ImageDataset):
                          frequency=frequency, tag=tag)
 
 
-
+    
 class SNR_DA530_FD(_SNR_DA530_base):
     _OTYPE = 'RM'
+    _FREQ = ''
 
 
-class SNR_DA530_I(_SNR_DA530_base):
+class SNR_DA530_I_1420MHz(_SNR_DA530_base):
     _OTYPE = 'I'
+    _FREQ = '_1420'
 
-
-class SNR_DA530_U(_SNR_DA530_base):
+    
+class SNR_DA530_U_1420MHz(_SNR_DA530_base):
     _OTYPE = 'U'
+    _FREQ = '_1420'
 
 
-class SNR_DA530_Q(_SNR_DA530_base):
+class SNR_DA530_Q_1420MHz(_SNR_DA530_base):
     _OTYPE = 'Q'
+    _FREQ = '_1420'
 
 
+class SNR_DA530_I_4850MHz(_SNR_DA530_base):
+    _OTYPE = 'I'
+    _FREQ = '_4850'
+
+    
+class SNR_DA530_U_4850MHz(_SNR_DA530_base):
+    _OTYPE = 'U'
+    _FREQ = '_4850'
+
+
+class SNR_DA530_Q_4850MHz(_SNR_DA530_base):
+    _OTYPE = 'Q'
+    _FREQ = '_4850'
+
+    
+class SNR_DA530_I_10450MHz(_SNR_DA530_base):
+    _OTYPE = 'I'
+    _FREQ = '_10450'
+
+    
+class SNR_DA530_U_10450MHz(_SNR_DA530_base):
+    _OTYPE = 'U'
+    _FREQ = '_10450'
+
+
+class SNR_DA530_Q_10450MHz(_SNR_DA530_base):
+    _OTYPE = 'Q'
+    _FREQ = '_10450'
