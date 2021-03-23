@@ -152,43 +152,40 @@ def helical_alt(grid, B, period=70*apu.pc):
     return Bx, By, Bz
 
 
+
+
+
 def helical(grid, B, period=70*apu.pc):
     """
     Computes a simple helical field
-
-    Note
-    ----
-    Bogus version of the helical field
-
-
+    
     Parameters
     ----------
     B : list
         List containing the x, y and z magnitudes
     period
         Period of the helical field
-
+    
     Returns
     -------
     Bx, By, Bz
     """
-
     # Helical parallel to x
     Bx = np.ones(grid.x.shape) /sqrt2  * B[0]
     arg = pi*grid.x/period
     By = np.cos(arg) /sqrt2 * B[0]
     Bz = np.sin(arg) /sqrt2 * B[0]
-
+    
     # Helical parallel to y
     arg = pi*grid.y/period
-    Bx += np.ones(grid.y.shape) /sqrt2  * B[1]
-    By += np.cos(arg) /sqrt2 * B[1]
+    By += np.ones(grid.y.shape) /sqrt2  * B[1]
+    Bx += np.cos(arg) /sqrt2 * B[1]
     Bz += np.sin(arg) /sqrt2 * B[1]
-
+    
     # Helical parallel to z
     arg = pi*grid.z/period
-    Bx += np.ones(grid.z.shape) /sqrt2  * B[2]
+    Bz += np.ones(grid.z.shape) /sqrt2  * B[2]
     By += np.cos(arg) /sqrt2 * B[2]
-    Bz += np.sin(arg) /sqrt2 * B[2]
-
+    Bx += np.sin(arg) /sqrt2 * B[2]
+    
     return Bx, By, Bz
